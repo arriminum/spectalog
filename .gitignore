@@ -1,0 +1,41 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.old
+
+# Logs
+*.log
+logs/
+
+# Local environment/config
+.env
+.env.*
+!.env.example
+
+# Build / dist / packages
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Test/output artifacts
+coverage/
+test-output/
+tmp/
+
+# ShellCheck / tooling cache
+.cache/
+
+# Local scripts or notes
+local/
+notes/
