@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+# Keep this in sync with the VERSION file (verified by `make check`).
+SPECTALOG_VERSION="0.1.0"
+
+error_exit() {
+    local line="$1"
+    echo
+    echo "Error: spectalog failed at line $line." >&2
+    exit 1
+}
+
+trap 'error_exit $LINENO' ERR
+
+usage() {
+    cat <<'EOF'
+Usage: spectalog <vhost> [-f]
+
+Show the log of a vhost deployed under /var/www.
+
+  <vhost>   Name of the vhost directory in /var/www (e.g. "hqjury" for
+            /var/www/hqjury).
+  -f        Follow the log (tail -f) instead of printing the last 15 lines.
+
+Log resolution order (first match wins):
+  1. ./<vhost>-log                   Current directory; one line with the log path.
+  2. $HOME/.spectalog/<vhost>-log    Same format, usable from any directory.
+  3. /var/www/<vhost>/logs/application-YYYYMMDD.log   Default, computed for today.
+
+Commands:
+  spectalog version | --version | -v   Print the version and exit.
+  spectalog -h | --help                Print this help and exit.
+EOF
+}
+
+case "${1:-}" in
+    version|--version|-v)
+        echo "spectalog $SPECTALOG_VERSION"
+        exit 0
+        ;;
+    -h|--help)
+        usage
+        exit 0
+        ;;
+esac
+
+vhost="${1:-}"
+opt="${2:-}"
+
+if [[ -z "$vhost" || "$vhost" == -* ]]; then
+    echo "Error: missing <vhost> argument." >&2
+    usage >&2
+    exit 1
+fi
+
+if [[ "$vhost" == *"/"* ]]; then
+    echo "Error: invalid vhost name: $vhost" >&2
+    exit 1
+fi
+
+local_config="$(pwd)/$vhost-log"
+home_config="$HOME/.spectalog/$vhost-log"
+default_log="/var/www/$vhost/logs/application-$(date +%Y%m%d).log"
+
+if [[ -f "$local_config" ]]; then
+    log_file="$(tr -d '\r\n' < "$local_config")"
+elif [[ -f "$home_config" ]]; then
+    log_file="$(tr -d '\r\n' < "$home_config")"
+else
+    log_file="$default_log"
+fi
+
+if [[ -z "$log_file" ]]; then
+    echo "Error: resolved log path is empty." >&2
+    exit 1
+fi
+
+if [[ ! -f "$log_file" ]]; then
+    echo "Error: log file not found: $log_file" >&2
+    exit 1
+fi
+
+echo "[$vhost] $log_file"
+
+if [[ "$opt" == "-f" ]]; then
+    tail -f "$log_file"
+else
+    tail -n 15 "$log_file"
+fi
