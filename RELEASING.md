@@ -16,11 +16,9 @@ Follow these steps in order to release a new version:
 
 ### 1. Decide the version bump
 
-Consult [AGENTS.md → Versioning](AGENTS.md#versioning) and pick the new version
-per Semantic Versioning:
+Consult [AGENTS.md → Versioning](AGENTS.md#versioning) and pick the new version per Semantic Versioning:
 
-- **MAJOR** — incompatible change (e.g. changes the log resolution order or
-  the config file format).
+- **MAJOR** — incompatible change (e.g. changes the log resolution order or the config file format).
 - **MINOR** — new, backward-compatible functionality.
 - **PATCH** — backward-compatible bug fix or small change.
 
@@ -84,6 +82,7 @@ git commit -m "Bump to 0.1.1: fixed uppercase vhost resolution
 ```
 
 Commit message format:
+
 - First line: `Bump to X.Y.Z: short description`
 - Blank line
 - Bullet points (optional) with details
@@ -139,6 +138,7 @@ Check the release page:
 https://github.com/arriminum/spectalog/releases/tag/v0.1.1
 
 Confirm:
+
 - Tag is correct (`v0.1.1`).
 - Notes match the CHANGELOG.
 - The commit hash is visible.

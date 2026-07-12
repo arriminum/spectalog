@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 
 # Keep this in sync with the VERSION file (verified by `make check`).
-SPECTALOG_VERSION="0.1.0"
+SPECTALOG_VERSION="0.2.0"
 
 error_exit() {
     local line="$1"
@@ -22,7 +22,9 @@ Show the log of a vhost deployed under /var/www.
 
   <vhost>   Name of the vhost directory in /var/www (e.g. "hqjury" for
             /var/www/hqjury).
-  -f        Follow the log (tail -f) instead of printing the last 15 lines.
+  -f        Follow the log (tail -F) instead of printing the last 15 lines.
+            Waits for the file to appear if it does not exist yet (e.g. right
+            after a deploy, before the app has written today's first line).
 
 Log resolution order (first match wins):
   1. ./<vhost>-log                   Current directory; one line with the log path.
@@ -77,15 +79,18 @@ if [[ -z "$log_file" ]]; then
     exit 1
 fi
 
-if [[ ! -f "$log_file" ]]; then
+if [[ "$opt" != "-f" && ! -f "$log_file" ]]; then
     echo "Error: log file not found: $log_file" >&2
+    echo "Hint: run with -f to wait for the file to appear (e.g. right after a deploy)." >&2
     exit 1
 fi
 
 echo "[$vhost] $log_file"
 
 if [[ "$opt" == "-f" ]]; then
-    tail -f "$log_file"
+    # tail -F waits for the file to be created and reopens it if replaced,
+    # so a fresh deploy with no log yet does not need spectalog to write anything.
+    tail -F "$log_file"
 else
     tail -n 15 "$log_file"
 fi

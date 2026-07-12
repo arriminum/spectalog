@@ -1,8 +1,6 @@
 # spectalog — usage
 
-Spectalog shows the log of a vhost deployed under `/var/www`, without
-requiring you to type the full `tail` command or to `cd` into the project's
-`src` directory.
+Spectalog shows the log of a vhost deployed under `/var/www`, without requiring you to type the full `tail` command or to `cd` into the project's `src` directory.
 
 ## Command line
 
@@ -10,16 +8,14 @@ requiring you to type the full `tail` command or to `cd` into the project's
 spectalog <vhost> [-f]
 ```
 
-- `<vhost>` — required. The name of the vhost directory in `/var/www` (for
-  example, `hqjury` for `/var/www/hqjury`).
-- `-f` — optional, second argument. Follows the log with `tail -f` instead of
-  printing the last 15 lines.
+- `<vhost>` — required. The name of the vhost directory in `/var/www` (for example, `hqjury` for `/var/www/hqjury`).
+- `-f` — optional, second argument. Follows the log with `tail -F` instead of printing the last 15 lines. Waits for the file to appear if it does not exist yet, and reopens it if it is replaced.
 
 Other commands:
 
 ```bash
 spectalog version      # also: spectalog --version | spectalog -v
-# → spectalog 0.1.0
+# → spectalog 0.2.0
 
 spectalog -h            # also: spectalog --help
 ```
@@ -28,25 +24,17 @@ spectalog -h            # also: spectalog --help
 
 Spectalog tries three sources, in this order, and uses the first match:
 
-1. **`./<vhost>-log`** — a file named `<vhost>-log` in the **current working
-   directory**. Its content is a single line: the absolute path to the log
-   file. Use this when you want a project-local override without touching
-   `$HOME`.
-2. **`$HOME/.spectalog/<vhost>-log`** — same one-line format, stored under
-   the user's home directory so it applies regardless of the current
-   directory.
-3. **Default (no config file needed)** — computed as:
+1. **`./<vhost>-log`** — a file named `<vhost>-log` in the **current working directory**. Its content is a single line: the absolute path to the log file. Use this when you want a project-local override without touching `$HOME`.
+1. **`$HOME/.spectalog/<vhost>-log`** — same one-line format, stored under the user's home directory so it applies regardless of the current directory.
+1. **Default (no config file needed)** — computed as:
 
    ```txt
    /var/www/<vhost>/logs/application-YYYYMMDD.log
    ```
 
-   using today's date. This matches the layout of an application's own
-   rotating daily log, the same convention used by the original per-project
-   `showlog` script.
+   using today's date. This matches the layout of an application's own rotating daily log, the same convention used by the original per-project `showlog` script.
 
-Spectalog prints which log file it resolved to before showing its content, so
-you always know which of the three sources was used:
+Spectalog prints which log file it resolved to before showing its content, so you always know which of the three sources was used:
 
 ```txt
 [hqjury] /var/log/apache2/error_hqjury.log
@@ -54,12 +42,8 @@ you always know which of the three sources was used:
 
 ### When to use a config file vs. the default
 
-- Use a **config file** (`./<vhost>-log` or `$HOME/.spectalog/<vhost>-log`)
-  for logs with a **fixed path** that never changes day to day — typically
-  the web server's own log (Apache/Nginx `error_*.log` or `access_*.log`).
-- Rely on the **default** for an app's **own rotating log**, since its path
-  changes every day. Do not hardcode a dated path (e.g.
-  `application-20260705.log`) in a config file — it goes stale the next day.
+- Use a **config file** (`./<vhost>-log` or `$HOME/.spectalog/<vhost>-log`) for logs with a **fixed path** that never changes day to day — typically the web server's own log (Apache/Nginx `error_*.log` or `access_*.log`).
+- Rely on the **default** for an app's **own rotating log**, since its path changes every day. Do not hardcode a dated path (e.g. `application-20260705.log`) in a config file — it goes stale the next day.
 
 ### Config file format
 
@@ -69,13 +53,11 @@ One line, no trailing content besides the path itself:
 /var/log/apache2/error_hqjury.log
 ```
 
-Trailing `\r` or `\n` characters are stripped; leading/trailing whitespace is
-not.
+Trailing `\r` or `\n` characters are stripped; leading/trailing whitespace is not.
 
 ## Examples
 
-Show the last 15 lines of `hqjury`'s log (resolved via the default rule,
-assuming no config file exists):
+Show the last 15 lines of `hqjury`'s log (resolved via the default rule, assuming no config file exists):
 
 ```bash
 spectalog hqjury
@@ -87,8 +69,9 @@ Follow `hqjury`'s log live:
 spectalog hqjury -f
 ```
 
-Point `hqjury` at the Apache error log instead of its own application log,
-from any directory:
+Follow a freshly deployed vhost's log even before it has written today's first line: `-f` waits for the file to appear instead of erroring out, which is handy right after a deploy step (e.g. `disponere ; spectalog hqjury -f`).
+
+Point `hqjury` at the Apache error log instead of its own application log, from any directory:
 
 ```bash
 mkdir -p ~/.spectalog
@@ -110,31 +93,22 @@ Spectalog stops with an error, and prints nothing else, in these cases:
 
 - `<vhost>` argument missing.
 - `<vhost>` contains a `/` (rejected to avoid escaping `/var/www`).
-- The resolved log file does not exist.
+- The resolved log file does not exist and `-f` was not given. With `-f`, spectalog instead waits for the file to appear.
 
 ## Known limitations
 
-- Spectalog does not create, rotate, or manage log files — it only locates
-  and reads them.
-- The current-directory config file (`./<vhost>-log`) is matched against
-  `$(pwd)`, so its precedence depends on where you invoke `spectalog` from.
+- Spectalog does not create, rotate, or manage log files — it only locates and reads them. `tail -F` waits and reopens the file on its own; spectalog never writes or touches it.
+- The current-directory config file (`./<vhost>-log`) is matched against `$(pwd)`, so its precedence depends on where you invoke `spectalog` from.
 
 ## Make targets
 
-The repository includes a `Makefile` for building, checking, and installing
-the script. Run `make help` to list them.
+The repository includes a `Makefile` for building, checking, and installing the script. Run `make help` to list them.
 
 - `make help` — list all available targets (default goal).
-- `make build` — copy `src/spectalog` into `dist/spectalog` and mark it
-  executable. Use this to produce a distributable copy without installing.
-- `make check` — lint `src/spectalog` with `shellcheck` and verify the
-  `VERSION` file matches `SPECTALOG_VERSION` in the script (non-destructive).
-- `make fmt` — reformat `src/spectalog` in place with `shfmt -i 4 -ci`.
-  Opt-in; not run by `make check`, so it never touches your formatting unless
-  you ask.
-- `make install` — build, then install to `/usr/local/bin/spectalog` with
-  mode `0755`. Needs `sudo` for the default prefix. Override the location
-  with `PREFIX=...`.
+- `make build` — copy `src/spectalog` into `dist/spectalog` and mark it executable. Use this to produce a distributable copy without installing.
+- `make check` — lint `src/spectalog` with `shellcheck` and verify the `VERSION` file matches `SPECTALOG_VERSION` in the script (non-destructive).
+- `make fmt` — reformat `src/spectalog` in place with `shfmt -i 4 -ci`. Opt-in; not run by `make check`, so it never touches your formatting unless you ask.
+- `make install` — build, then install to `/usr/local/bin/spectalog` with mode `0755`. Needs `sudo` for the default prefix. Override the location with `PREFIX=...`.
 - `make uninstall` — remove the installed script from the target path.
 - `make clean` — remove the `dist/` build artifacts.
 

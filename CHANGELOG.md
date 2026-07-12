@@ -20,19 +20,23 @@ On every change to `src/spectalog`:
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-12
+
+### Changed
+
+- `-f` now follows the log with `tail -F` instead of `tail -f`, so it waits for the file to appear (and reopens it if replaced) instead of aborting when a freshly deployed vhost has not written today's log yet.
+- The existence check for the resolved log file now only applies without `-f`; with `-f`, spectalog no longer requires the file to exist before it starts following.
+- The "log file not found" error now hints at using `-f` to wait for the file instead.
+
 ## [0.1.0] - 2026-07-05
 
-First tracked release. Baseline: `spectalog <vhost> [-f]` resolves the log to
-show via three sources in order — `./<vhost>-log`, `$HOME/.spectalog/<vhost>-log`,
-then a default of `/var/www/<vhost>/logs/application-YYYYMMDD.log` for today.
+First tracked release. Baseline: `spectalog <vhost> [-f]` resolves the log to show via three sources in order — `./<vhost>-log`, `$HOME/.spectalog/<vhost>-log`, then a default of `/var/www/<vhost>/logs/application-YYYYMMDD.log` for today.
 
 ### Added
 
 - `spectalog <vhost> [-f]` — show the last 15 lines, or follow with `-f`.
-- Three-tier log resolution: current-directory config file, `$HOME/.spectalog`
-  config file, and a dynamic default computed with today's date.
+- Three-tier log resolution: current-directory config file, `$HOME/.spectalog` config file, and a dynamic default computed with today's date.
 - `spectalog version` command (also `--version` / `-v`) that prints the version.
 - `spectalog -h` / `--help` usage text.
-- Embedded `SPECTALOG_VERSION` in the script and a `VERSION` file as the
-  repository source of truth, kept in sync by `make check` (`version-check`).
+- Embedded `SPECTALOG_VERSION` in the script and a `VERSION` file as the repository source of truth, kept in sync by `make check` (`version-check`).
 - This changelog.
